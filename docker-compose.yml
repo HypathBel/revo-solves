@@ -1,0 +1,30 @@
+services:
+  app:
+      restart: always
+      tty: true
+      build:
+        context: .
+        dockerfile: ./docker/php.dockerfile
+        target: php
+        args:
+          - BUILD_ENV=local
+          - BUILD_ROLE=app
+      working_dir: /var/www
+      volumes:
+        - ./:/var/www
+      ports:
+        - ${SERVER_PORT}:8000
+      # links:
+      #   - database
+      # depends_on:
+      #   database:
+      #     condition: service_healthy
+      environment:
+        - BUILD_NUMBER=LOCAL_ENV
+        - DOCKER_IMAGE_VERSION=NA
+        - JENKINS_BUILD_NUMBER=NA
+        - DOCKER_IMAGE_VERSION_DATE=now
+        - BUILD_ROLE=app
+        - BUILD_ENV=local
+      env_file:
+        - .env
