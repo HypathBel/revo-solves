@@ -1,19 +1,27 @@
 <?php
 
-namespace App\Models;
+namespace App\Application\Classes;
 
-use App\Application\Classes\Movie;
-use App\Application\Classes\Rental;
+use App\Application\Statements\StatementFormatterInterface;
+use App\Application\Statements\TextStatementFormatter;
+use App\Domain\Rentals\RentalStatementCalculator;
 
 class Customer
 {
     private string $_name;
+
     /** @var Rental[] */
     private array $_rentals = [];
+
+    private RentalStatementCalculator $statementCalculator;
+
+    private StatementFormatterInterface $statementFormatter;
 
     public function __construct(string $name)
     {
         $this->_name = $name;
+        $this->statementCalculator = new RentalStatementCalculator;
+        $this->statementFormatter = new TextStatementFormatter;
     }
 
     public function addRental(Rental $arg): void
@@ -28,54 +36,22 @@ class Customer
 
     public function statement(): string
     {
-        $totalAmount = 0.0;
-        $frequentRenterPoints = 0;
-        $result = "Rental Record for " . $this->getName() . "\n";
+        $data = $this->statementCalculator->calculate($this->getName(), $this->_rentals);
 
-        foreach ($this->_rentals as $each) {
-            $thisAmount = 0.0;
+        return $this->statementFormatter->format($data);
+    }
 
-            // determine amounts for each line
-            switch ($each->getMovie()->getPriceCode()) {
-                case Movie::REGULAR:
-                    $thisAmount += 2;
-                    if ($each->getDaysRented() > 2) {
-                        $thisAmount += ($each->getDaysRented() - 2) * 1.5;
-                    }
-                    break;
+    public function htmlStatement(): string 
+    {
+        $data = $this->statementCalculator->calculate($this->getName(), $this->_rentals);
 
-                case Movie::NEW_RELEASE:
-                    $thisAmount += $each->getDaysRented() * 3;
-                    break;
+        return $this->statementFormatter->format($data);
+    }
 
-                case Movie::CHILDRENS:
-                    $thisAmount += 1.5;
-                    if ($each->getDaysRented() > 3) {
-                        $thisAmount += ($each->getDaysRented() - 3) * 1.5;
-                    }
-                    break;
-            }
+    public function xmlStatement(): string 
+    {
+        $data = $this->statementCalculator->calculate($this->getName(), $this->_rentals);
 
-            // add frequent renter points
-            $frequentRenterPoints++;
-
-            // add bonus for a two day new release rental
-            if (
-                $each->getMovie()->getPriceCode() === Movie::NEW_RELEASE
-                && $each->getDaysRented() > 1
-            ) {
-                $frequentRenterPoints++;
-            }
-
-            // show figures for this rental
-            $result .= "\t" . $each->getMovie()->getTitle() . "\t" . $thisAmount . "\n";
-            $totalAmount += $thisAmount;
-        }
-
-        // add footer lines
-        $result .= "Amount owed is " . $totalAmount . "\n";
-        $result .= "You earned " . $frequentRenterPoints . " frequent renter points";
-
-        return $result;
+        return $this->statementFormatter->format($data);
     }
 }
