@@ -2,8 +2,8 @@
 
 namespace App\Application\Classes;
 
+use App\Application\Statements\StatementFactory;
 use App\Application\Statements\StatementFormatterInterface;
-use App\Application\Statements\TextStatementFormatter;
 use App\Domain\Rentals\RentalStatementCalculator;
 
 class Customer
@@ -17,11 +17,11 @@ class Customer
 
     private StatementFormatterInterface $statementFormatter;
 
-    public function __construct(string $name)
+    public function __construct(string $name, ?string $statementFormat = 'text')
     {
         $this->_name = $name;
         $this->statementCalculator = new RentalStatementCalculator;
-        $this->statementFormatter = new TextStatementFormatter;
+        $this->statementFormatter = StatementFactory::make($statementFormat);
     }
 
     public function addRental(Rental $arg): void
@@ -37,21 +37,6 @@ class Customer
     public function statement(): string
     {
         $data = $this->statementCalculator->calculate($this->getName(), $this->_rentals);
-
-        return $this->statementFormatter->format($data);
-    }
-
-    public function htmlStatement(): string 
-    {
-        $data = $this->statementCalculator->calculate($this->getName(), $this->_rentals);
-
-        return $this->statementFormatter->format($data);
-    }
-
-    public function xmlStatement(): string 
-    {
-        $data = $this->statementCalculator->calculate($this->getName(), $this->_rentals);
-
         return $this->statementFormatter->format($data);
     }
 }
